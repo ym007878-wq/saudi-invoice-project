@@ -1,3 +1,4 @@
+
 name: Build APK
 
 on:
@@ -26,10 +27,17 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install Android SDK packages
+      - name: Accept Android SDK licenses
+        shell: bash
         run: |
-          sdkmanager --install \
-            "platform-tools" \
+          yes | sdkmanager --licenses || true
+
+      - name: Install Android SDK packages
+        shell: bash
+        run: |
+          set -e
+          sdkmanager --sdk_root="$ANDROID_HOME" \
+            --install "platform-tools" \
             "platforms;android-35" \
             "build-tools;35.0.0"
 
@@ -43,7 +51,7 @@ jobs:
             | head -n 1)
 
           if [ -z "$FILE" ]; then
-            echo "ERROR: settings.gradle not found"
+            echo "ERROR: Android Gradle project not found"
             exit 1
           fi
 
@@ -51,17 +59,17 @@ jobs:
           echo "dir=$DIR" >> "$GITHUB_OUTPUT"
           echo "Project directory: $DIR"
 
-      - name: Build fresh APK
+      - name: Build debug APK
         working-directory: ${{ steps.project.outputs.dir }}
         shell: bash
         run: |
-          if [ -f gradlew ]; then
-            chmod +x gradlew
-            ./gradlew --no-daemon clean assembleDebug
-          else
-            echo "Gradle wrapper not found"
+          if [ ! -f gradlew ]; then
+            echo "ERROR: gradlew not found in project directory"
             exit 1
           fi
+
+          chmod +x gradlew
+          ./gradlew --no-daemon clean assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
