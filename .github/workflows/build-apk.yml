@@ -24,7 +24,8 @@ jobs:
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
 
       - name: Build debug APK
-        run: gradle assembleDebug --stacktrace
+        run: chmod +x ./gradlew
+./gradlew assembleDebug --stacktrace
 
       - uses: actions/upload-artifact@v4
         with:
