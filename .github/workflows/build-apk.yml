@@ -18,13 +18,13 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
         with:
-             gradle-version: "9.1.0"
+             
 
       - name: Accept SDK licenses
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
 
       - name: Build debug APK
-        run: gradle assembleDebug --stacktrace
+        
 
       - uses: actions/upload-artifact@v4
         with:
