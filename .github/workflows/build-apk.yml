@@ -1,4 +1,3 @@
-
 name: Build APK
 
 on:
@@ -27,27 +26,30 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Install Android SDK packages
+        run: |
+          sdkmanager --install \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
+
       - name: Locate Android project
         id: project
         shell: bash
         run: |
-          if [ -f settings.gradle ] || [ -f settings.gradle.kts ]; then
-            echo "dir=." >> "$GITHUB_OUTPUT"
-          else
-            FILE=$(find . -mindepth 2 -maxdepth 5 \
-              \( -name settings.gradle -o -name settings.gradle.kts \) \
-              -type f | head -n 1)
+          FILE=$(find . -type f \
+            \( -name settings.gradle -o -name settings.gradle.kts \) \
+            -not -path '*/.gradle/*' \
+            | head -n 1)
 
-            if [ -z "$FILE" ]; then
-              echo "ERROR: Android Gradle project not found."
-              exit 1
-            fi
-
-            echo "dir=$(dirname "$FILE")" >> "$GITHUB_OUTPUT"
+          if [ -z "$FILE" ]; then
+            echo "ERROR: settings.gradle not found"
+            exit 1
           fi
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+          DIR=$(dirname "$FILE")
+          echo "dir=$DIR" >> "$GITHUB_OUTPUT"
+          echo "Project directory: $DIR"
 
       - name: Build fresh APK
         working-directory: ${{ steps.project.outputs.dir }}
@@ -55,9 +57,10 @@ jobs:
         run: |
           if [ -f gradlew ]; then
             chmod +x gradlew
-            ./gradlew --no-daemon clean assembleDebug --stacktrace
+            ./gradlew --no-daemon clean assembleDebug
           else
-            gradle --no-daemon clean assembleDebug --stacktrace
+            echo "Gradle wrapper not found"
+            exit 1
           fi
 
       - name: Upload APK
