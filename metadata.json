@@ -1,0 +1,6 @@
+{
+  "name": "فاتورة زاتكا",
+  "description": "قارئ وفاحص رموز الاستجابة السريعة للفواتير الإلكترونية السعودية ZATCA",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,6 @@
+{
+  "summary":  "Implementation plan for ZATCA E-Invoice QR Reader, an Arabic RTL Jetpack Compose Android application supporting continuous camera scanning, gallery image decoding with multi-scale/inversion fallback, and batch Base64 text parsing for Saudi e-invoices with comprehensive TLV validation, financial summaries, and export capabilities.",
+  "updatedAt":  "2026-10-28T13:04:09.672615840Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}
