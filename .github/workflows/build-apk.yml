@@ -27,49 +27,57 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Accept Android SDK licenses
-        shell: bash
+      - name: Install Android SDK
         run: |
           yes | sdkmanager --licenses || true
-
-      - name: Install Android SDK packages
-        shell: bash
-        run: |
-          set -e
-          sdkmanager --sdk_root="$ANDROID_HOME" \
-            --install "platform-tools" \
+          sdkmanager --install \
+            "platform-tools" \
             "platforms;android-35" \
             "build-tools;35.0.0"
 
-      - name: Locate Android project
+      - name: Locate Gradle project
         id: project
         shell: bash
         run: |
-          FILE=$(find . -type f \
-            \( -name settings.gradle -o -name settings.gradle.kts \) \
-            -not -path '*/.gradle/*' \
-            | head -n 1)
+          WRAPPER=$(find . -type f -name gradlew \
+            -not -path '*/.gradle/*' | head -n 1)
 
-          if [ -z "$FILE" ]; then
-            echo "ERROR: Android Gradle project not found"
-            exit 1
+          if [ -n "$WRAPPER" ]; then
+            DIR=$(dirname "$WRAPPER")
+            echo "dir=$DIR" >> "$GITHUB_OUTPUT"
+            echo "wrapper=true" >> "$GITHUB_OUTPUT"
+          else
+            SETTINGS=$(find . -type f \
+              \( -name settings.gradle -o -name settings.gradle.kts \) \
+              -not -path '*/.gradle/*' | head -n 1)
+
+            if [ -z "$SETTINGS" ]; then
+              echo "ERROR: Gradle project not found"
+              exit 1
+            fi
+
+            DIR=$(dirname "$SETTINGS")
+            echo "dir=$DIR" >> "$GITHUB_OUTPUT"
+            echo "wrapper=false" >> "$GITHUB_OUTPUT"
           fi
 
-          DIR=$(dirname "$FILE")
-          echo "dir=$DIR" >> "$GITHUB_OUTPUT"
           echo "Project directory: $DIR"
 
-      - name: Build debug APK
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Build APK
         working-directory: ${{ steps.project.outputs.dir }}
         shell: bash
         run: |
-          if [ ! -f gradlew ]; then
-            echo "ERROR: gradlew not found in project directory"
-            exit 1
+          if [ "${{ steps.project.outputs.wrapper }}" = "true" ]; then
+            chmod +x gradlew
+            ./gradlew --no-daemon clean assembleDebug
+          else
+            gradle --no-daemon clean assembleDebug
           fi
-
-          chmod +x gradlew
-          ./gradlew --no-daemon clean assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
